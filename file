@@ -1,0 +1,38 @@
+# Foundation API Documentation
+
+## Overview
+The Foundation API serves as a secure interface to expose employee-related operations for different user roles within the organization.
+
+## Architecture
+- **Foundation.API**: Hosts minimal API definitions and middleware configuration under `Program.cs`.
+- **Foundation.Application**: Contains application services (`EmployeeService`) and DTOs.
+- **Foundation.Domain**: Defines core domain entities like `Employee`.
+- **Foundation.Infrastructure**: Holds repositories and DB context for data access.
+
+## Endpoints
+- `GET /health/live`: Liveness probe returning `{ status: "Healthy" }`.
+- `GET /health/ready`: Readiness check verifying database connectivity.
+- `GET /health`: Aggregated health checks (liveness + readiness).
+- `GET /metrics`: Placeholder metrics endpoint reserved for future instrumentation.
+- `GET /employees`: Requires `EmployeePolicy` and lists all employees.
+- `GET /employees/{id}`: Requires `LeadershipPolicy` and returns the requested employee if found.
+- `POST /employees`: Requires `AdminPolicy`; currently accepts a payload and responds with `202 Accepted`.
+
+## Security & Policies
+- JWT Bearer authentication via Azure AD settings (`Authority`, `Audience`).
+- Policies:
+  - `EmployeePolicy`: Requires `Employee` role.
+  - `LeadershipPolicy`: Requires `Leadership` role.
+  - `AdminPolicy`: Requires `Admin` role.
+
+## Observability & Telemetry
+- Application Insights configured using `Observability` section values.
+- Prometheus metrics endpoint placeholder at `/metrics`.
+- Health checks exposed under `/health`, `/health/live`, `/health/ready`.
+- Rate limiting applied globally via token bucket policy (`100 tokens per minute`).
+
+## Development & Setup
+1. Configure connection strings and Azure AD settings in `appsettings.json`.
+2. Run database migrations via the Foundation.Infrastructure context.
+3. Launch the API (`dotnet run` within `Foundation.API`).
+4. Consume the endpoints with valid JWT tokens issued for each role.
