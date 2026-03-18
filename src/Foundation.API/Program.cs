@@ -1,5 +1,7 @@
 using Foundation.API.Endpoints;
+using Foundation.Application.DTOs;
 using Foundation.Application.Extensions;
+using Foundation.Application.Services;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -107,19 +109,37 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
 app.MapGet("/metrics", () => Results.Ok("Metrics endpoint"));
 
-app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service) =>
+app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] IEmployeeService service) =>
     Results.Ok(service.ListAsync()));
 
-app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, Guid id) =>
+app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] IEmployeeService service, Guid id) =>
     service.GetAsync(id) switch
     {
         { } employee => Results.Ok(employee),
         null => Results.NotFound()
     });
 
-app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
+app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
 {
     var task = service.GetAsync(employee.Id);
+    return Results.Accepted();
+});
+
+app.MapGet("/skills", [Authorize(Policy = "EmployeePolicy")] async ([FromServices] ISkillService service) =>
+    Results.Ok(await service.GetPrimarySkillsAsync()));
+
+app.MapGet("/skills/{id}/secondaries", [Authorize(Policy = "EmployeePolicy")] async ([FromServices] ISkillService service, Guid id) =>
+    Results.Ok(await service.GetSecondarySkillsAsync(id)));
+
+app.MapPost("/skills", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, [FromBody] CreateSkillDto dto) =>
+{
+    await service.AddSkillAsync(dto);
+    return Results.Accepted();
+});
+
+app.MapDelete("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, Guid id) =>
+{
+    await service.DeleteSkillAsync(id);
     return Results.Accepted();
 });
 
