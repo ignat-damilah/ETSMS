@@ -1,11 +1,14 @@
 using Foundation.API.Endpoints;
 using Foundation.Application.Extensions;
+using Foundation.Application.Services;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Prometheus;
+using System;
+using System.Threading;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -48,6 +51,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("EmployeePolicy", policy => policy.RequireRole("Employee"));
     options.AddPolicy("LeadershipPolicy", policy => policy.RequireRole("Leadership"));
     options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("TaxonomyAdminPolicy", policy => policy.RequireRole("Taxonomy-Admin"));
 });
 
 // CORS
@@ -123,4 +127,31 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     return Results.Accepted();
 });
 
+app.MapPost("/skills/primary", [Authorize(Policy = "TaxonomyAdminPolicy")] async ([FromServices] ISkillService service, [FromBody] PrimarySkillRequest request, CancellationToken cancellationToken) =>
+{
+    var skill = await service.CreatePrimaryAsync(request.Name, request.Category, cancellationToken);
+    return Results.Created($"/skills/{skill.Id}", skill);
+});
+
+app.MapPost("/skills/secondary", [Authorize(Policy = "TaxonomyAdminPolicy")] async ([FromServices] ISkillService service, [FromBody] SecondarySkillRequest request, CancellationToken cancellationToken) =>
+{
+    var skill = await service.CreateSecondaryAsync(request.Name, request.PrimarySkillId, cancellationToken);
+    return Results.Created($"/skills/{skill.Id}", skill);
+});
+
+app.MapGet("/skills/{primarySkillId}/secondaries", [Authorize] async ([FromServices] ISkillService service, Guid primarySkillId, bool includeInactive = false, CancellationToken cancellationToken = default) =>
+{
+    var secondaries = await service.ListSecondaryAsync(primarySkillId, includeInactive, cancellationToken);
+    return Results.Ok(secondaries);
+});
+
+app.MapPatch("/skills/{skillId}/deprecate", [Authorize(Policy = "TaxonomyAdminPolicy")] async ([FromServices] ISkillService service, Guid skillId, CancellationToken cancellationToken) =>
+{
+    await service.DeprecateAsync(skillId, cancellationToken);
+    return Results.NoContent();
+});
+
 app.Run();
+
+internal sealed record PrimarySkillRequest(string Name, string Category);
+internal sealed record SecondarySkillRequest(string Name, Guid PrimarySkillId);
