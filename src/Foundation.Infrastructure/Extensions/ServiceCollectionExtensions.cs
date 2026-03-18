@@ -15,10 +15,11 @@ public static class ServiceCollectionExtensions
             var connectionString = configuration.GetConnectionString("FoundationDatabase")
                 ?? throw new InvalidOperationException("Connection string 'FoundationDatabase' is not configured.");
 
-            options.UseNpgsql(connectionString);
+            options.UseSqlServer(connectionString);
         });
 
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<ISkillRepository, SkillRepository>();
 
         return services;
     }
