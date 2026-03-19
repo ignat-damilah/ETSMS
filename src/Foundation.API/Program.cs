@@ -123,4 +123,35 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     return Results.Accepted();
 });
 
+app.MapGet("/skills", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.ISkillService service) =>
+    Results.Ok(service.ListAsync()));
+
+app.MapGet("/skills/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] Foundation.Application.Services.ISkillService service, Guid id) =>
+    service.GetAsync(id) switch
+    {
+        { } skill => Results.Ok(skill),
+        null => Results.NotFound()
+    });
+
+app.MapGet("/skills/{id}/secondaries", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.ISkillService service, Guid id) =>
+    Results.Ok(service.GetSecondarySkillsAsync(id)));
+
+app.MapPost("/skills", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, [FromBody] Foundation.Application.DTOs.CreateSkillDto dto) =>
+{
+    await service.CreateAsync(dto);
+    return Results.Created($"/skills/{Guid.NewGuid()}", dto);
+});
+
+app.MapPut("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id, [FromBody] Foundation.Application.DTOs.UpdateSkillDto dto) =>
+{
+    await service.UpdateAsync(id, dto);
+    return Results.NoContent();
+});
+
+app.MapDelete("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id) =>
+{
+    await service.DeleteAsync(id);
+    return Results.NoContent();
+});
+
 app.Run();
