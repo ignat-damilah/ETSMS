@@ -1,5 +1,7 @@
 using Foundation.API.Endpoints;
 using Foundation.Application.Extensions;
+using Foundation.Application.Interfaces;
+using Foundation.Application.DTOs;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -84,13 +86,13 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Health endpoints
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
 app.MapGet("/health/ready", ([FromServices] Foundation.Infrastructure.Data.FoundationDbContext context) =>
 {
     var canConnect = context.Database.CanConnect();
     return canConnect ? Results.Ok(new { status = "Ready" }) : Results.StatusCode(503);
 });
-
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     Predicate = _ => true,
@@ -104,23 +106,46 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         });
     }
 });
-
 app.MapGet("/metrics", () => Results.Ok("Metrics endpoint"));
 
-app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service) =>
+// Employee endpoints
+app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] IEmployeeService service) =>
     Results.Ok(service.ListAsync()));
-
-app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, Guid id) =>
+app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] IEmployeeService service, Guid id) =>
     service.GetAsync(id) switch
     {
         { } employee => Results.Ok(employee),
         null => Results.NotFound()
     });
-
-app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
+app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
 {
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
+});
+
+// Skill taxonomy management endpoints
+app.MapGet("/skills/taxonomy", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service) =>
+    Results.Ok(await service.GetTaxonomyAsync()));
+app.MapPost("/skills", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, [FromBody] SkillCreateDto dto) =>
+{
+    var created = await service.CreateAsync(dto);
+    return created is not null ? Results.Created($"/skills/{created.Id}", created) : Results.BadRequest();
+});
+app.MapPut("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, Guid id, [FromBody] SkillUpdateDto dto) =>
+{
+    var updated = await service.UpdateAsync(id, dto);
+    return updated is not null ? Results.Ok(updated) : Results.NotFound();
+});
+app.MapPost("/skills/{id}/deprecate", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, Guid id) =>
+{
+    var result = await service.DeprecateAsync(id);
+    return result ? Results.Ok() : Results.NotFound();
+});
+app.MapDelete("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, Guid id) =>
+{
+    var deleted = await service.DeleteAsync(id);
+    if (deleted) return Results.NoContent();
+    return Results.BadRequest(new { message = "Skill is in use. Deprecate the skill instead of deleting." });
 });
 
 app.Run();
