@@ -27,7 +27,7 @@ public sealed class FoundationDbContext : DbContext
         modelBuilder.Entity<Skill>(builder =>
         {
             builder.HasKey(s => s.Id);
-            builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
+            builder.Property(s => s.Name).IsRequired().HasMaxLength(50);
             builder.Property(s => s.Category).IsRequired().HasMaxLength(100);
             builder.HasOne(s => s.ParentSkill)
                    .WithMany(s => s.ChildSkills)
