@@ -1,18 +1,17 @@
-using Foundation.API.Endpoints;
+using Foundation.Application.DTOs;
 using Foundation.Application.Extensions;
+using Foundation.Application.Interfaces;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
-using Prometheus;
-using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Foundation.API.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,20 +106,98 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
 app.MapGet("/metrics", () => Results.Ok("Metrics endpoint"));
 
-app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service) =>
+app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] IEmployeeService service) =>
     Results.Ok(service.ListAsync()));
 
-app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, Guid id) =>
+app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] IEmployeeService service, Guid id) =>
     service.GetAsync(id) switch
     {
         { } employee => Results.Ok(employee),
         null => Results.NotFound()
     });
 
-app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
+app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
 {
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
+});
+
+app.MapGet("/skills/primary", [Authorize(Policy = "EmployeePolicy")] async ([FromServices] ISkillService service, [FromQuery] bool? isActive) =>
+{
+    var skills = await service.GetPrimaryAsync(isActive);
+    return Results.Ok(skills);
+});
+
+app.MapGet("/skills/{parentSkillId}/secondary", [Authorize(Policy = "EmployeePolicy")] async ([FromServices] ISkillService service, Guid parentSkillId, [FromQuery] bool? isActive) =>
+{
+    var skills = await service.GetSecondaryAsync(parentSkillId, isActive);
+    return Results.Ok(skills);
+});
+
+app.MapPost("/skills", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, HttpContext context, [FromBody] CreateSkillDto dto) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+    try
+    {
+        var skill = await service.CreateAsync(dto, userId);
+        return Results.Created($"/skills/{skill.Id}", skill);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(ex.Message);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+});
+
+app.MapPut("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, HttpContext context, Guid id, [FromBody] UpdateSkillDto dto) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+    dto.Id = id;
+
+    try
+    {
+        var updated = await service.UpdateAsync(dto, userId);
+        return Results.Ok(updated);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(ex.Message);
+    }
+});
+
+app.MapDelete("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, HttpContext context, Guid id) =>
+{
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+    try
+    {
+        await service.DeleteAsync(id, userId);
+        return Results.NoContent();
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(ex.Message);
+    }
 });
 
 app.Run();
