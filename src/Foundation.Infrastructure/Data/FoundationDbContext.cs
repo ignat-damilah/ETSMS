@@ -37,6 +37,9 @@ public sealed class FoundationDbContext : DbContext
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(s => new { s.Name, s.Category }).IsUnique();
+
+            // Global query filter to exclude soft-deleted skills
+            builder.HasQueryFilter(s => s.IsActive);
         });
     }
 }

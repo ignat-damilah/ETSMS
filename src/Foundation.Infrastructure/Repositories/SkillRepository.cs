@@ -18,7 +18,9 @@ public sealed class SkillRepository : ISkillRepository
         => await _context.Skills.AsNoTracking().ToListAsync(cancellationToken);
 
     public async Task<Skill?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => await _context.Skills.FindAsync(new object[] { id }, cancellationToken);
+        => await _context.Skills
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
     public async Task AddAsync(Skill skill, CancellationToken cancellationToken = default)
     {
@@ -34,7 +36,9 @@ public sealed class SkillRepository : ISkillRepository
 
     public async Task DeleteAsync(Skill skill, CancellationToken cancellationToken = default)
     {
-        _context.Skills.Remove(skill);
+        // Soft delete: mark skill as inactive
+        skill.IsActive = false;
+        _context.Skills.Update(skill);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
