@@ -123,4 +123,36 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     return Results.Accepted();
 });
 
+app.MapPost("/skills", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, [FromBody] Foundation.Application.DTOs.SkillCreateDto dto) =>
+{
+    var skill = await service.CreateAsync(dto);
+    return Results.Created($"/skills/{skill.Id}", skill);
+});
+
+app.MapGet("/skills", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.ISkillService service, bool includeInactive = true) =>
+    Results.Ok(service.ListAsync(includeInactive)));
+
+app.MapGet("/skills/{id}", [Authorize(Policy = "LeadershipPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id) =>
+    await service.GetAsync(id) switch
+    {
+        { } skill => Results.Ok(skill),
+        null => Results.NotFound()
+    });
+
+app.MapGet("/skills/{id}/hierarchy", [Authorize(Policy = "LeadershipPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id, bool includeInactiveAncestors = true, bool includeInactiveDescendants = true) =>
+    await service.GetHierarchyAsync(id, includeInactiveAncestors, includeInactiveDescendants) switch
+    {
+        { } hierarchy => Results.Ok(hierarchy),
+        null => Results.NotFound()
+    });
+
+app.MapPut("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id, [FromBody] Foundation.Application.DTOs.SkillUpdateDto dto) =>
+    Results.Ok(await service.UpdateAsync(id, dto)));
+
+app.MapDelete("/skills/{id}", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.ISkillService service, Guid id) =>
+{
+    await service.DeleteAsync(id);
+    return Results.NoContent();
+});
+
 app.Run();
