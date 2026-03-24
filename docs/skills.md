@@ -11,9 +11,9 @@
 - Creating or updating with invalid parent references throws descriptive validation errors.
 
 ## Deletion Constraints
-- Skills are permanently deleted once allowed.
-- A skill cannot be deleted while it has active children. The service enforces this constraint and returns a clear message advising deactivation of dependents before retrying.
-- Dependency checks query for active children before issuing deletes to ensure consistent hierarchy state.
+- Skills are soft deleted by toggling `IsActive` to `false`, allowing historical relationships and references to remain intact while preventing them from appearing in active listings.
+- A skill cannot be soft deleted while it has active children. The service enforces this constraint and returns a clear message advising deactivation of dependents before retrying.
+- Dependency checks query for active children before issuing soft deletes to ensure consistent hierarchy state.
 
 ## Hierarchy Behavior
 - The repository supplies efficient ancestor and descendant traversal by loading skills once per request and operating on in-memory collections keyed by `Id`.

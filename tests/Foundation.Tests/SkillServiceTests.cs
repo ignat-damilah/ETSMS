@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Foundation.Application.DTOs;
 using Foundation.Application.Services;
 using Foundation.Infrastructure.Data;
@@ -41,7 +42,7 @@ public sealed class SkillServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CanDeleteSkillAfterChildrenDeactivated()
+    public async Task SoftDeleteSkillAfterChildrenDeactivated()
     {
         var parent = await _service.CreateAsync(new SkillCreateDto { Name = "Parent", Category = "Core" });
         var child = await _service.CreateAsync(new SkillCreateDto { Name = "Child", Category = "Core", ParentSkillId = parent.Id });
@@ -50,7 +51,21 @@ public sealed class SkillServiceTests : IDisposable
         await _service.DeleteAsync(parent.Id);
 
         var result = await _service.GetAsync(parent.Id);
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.False(result!.IsActive);
+    }
+
+    [Fact]
+    public async Task ListExcludesInactiveSkillsByDefault()
+    {
+        var skill = await _service.CreateAsync(new SkillCreateDto { Name = "Skill", Category = "Core" });
+        await _service.DeleteAsync(skill.Id);
+
+        var activeOnly = await _service.ListAsync();
+        Assert.DoesNotContain(activeOnly, s => s.Id == skill.Id);
+
+        var allSkills = await _service.ListAsync(includeInactive: true);
+        Assert.Contains(allSkills, s => s.Id == skill.Id && !s.IsActive);
     }
 
     [Fact]

@@ -111,7 +111,8 @@ public sealed class SkillRepository : ISkillRepository
 
     public async Task DeleteAsync(Skill skill, CancellationToken cancellationToken = default)
     {
-        _context.Skills.Remove(skill);
+        skill.IsActive = false;
+        _context.Skills.Update(skill);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
