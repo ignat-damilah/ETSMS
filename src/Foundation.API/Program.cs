@@ -123,4 +123,6 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     return Results.Accepted();
 });
 
+app.MapSkillEndpoints();
+
 app.Run();
