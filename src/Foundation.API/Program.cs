@@ -77,12 +77,18 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
 app.UseRateLimiter();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
 app.MapGet("/health/ready", ([FromServices] Foundation.Infrastructure.Data.FoundationDbContext context) =>
@@ -122,5 +128,7 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
 });
+
+app.MapSkillEndpoints();
 
 app.Run();
