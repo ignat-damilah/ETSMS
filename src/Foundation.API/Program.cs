@@ -1,15 +1,12 @@
-using Foundation.API.Endpoints;
 using Foundation.Application.Extensions;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
-using Prometheus;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Foundation.API.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 // Observability
-var appInsightsKey = builder.Configuration["Observability:ApplicationInsights:InstrumentationKey"] ?? string.Empty;
 builder.Services.AddApplicationInsightsTelemetry(options =>
 {
     options.ConnectionString = builder.Configuration["Observability:ApplicationInsights:ConnectionString"];
-    options.InstrumentationKey = appInsightsKey;
 });
 
 // Database & services
@@ -107,19 +102,18 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
 app.MapGet("/metrics", () => Results.Ok("Metrics endpoint"));
 
-app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service) =>
-    Results.Ok(service.ListAsync()));
+app.MapGet("/employees", [Authorize(Policy = "EmployeePolicy")] async ([FromServices] Foundation.Application.Services.IEmployeeService service) =>
+    Results.Ok(await service.ListAsync()));
 
-app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, Guid id) =>
-    service.GetAsync(id) switch
-    {
-        { } employee => Results.Ok(employee),
-        null => Results.NotFound()
-    });
-
-app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Foundation.Application.Services.IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
+app.MapGet("/employees/{id}", [Authorize(Policy = "LeadershipPolicy")] async ([FromServices] Foundation.Application.Services.IEmployeeService service, Guid id) =>
 {
-    var task = service.GetAsync(employee.Id);
+    var employee = await service.GetAsync(id);
+    return employee is not null ? Results.Ok(employee) : Results.NotFound();
+});
+
+app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] async ([FromServices] Foundation.Application.Services.IEmployeeService service, [FromBody] Foundation.Domain.Entities.Employee employee) =>
+{
+    await service.ListAsync();
     return Results.Accepted();
 });
 
