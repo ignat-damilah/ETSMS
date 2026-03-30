@@ -1,15 +1,12 @@
-using Foundation.API.Endpoints;
 using Foundation.Application.Extensions;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
-using Prometheus;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Foundation.API.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +16,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 // Observability
-var appInsightsKey = builder.Configuration["Observability:ApplicationInsights:InstrumentationKey"] ?? string.Empty;
+var appInsightsConnection = builder.Configuration["Observability:ApplicationInsights:ConnectionString"];
 builder.Services.AddApplicationInsightsTelemetry(options =>
 {
-    options.ConnectionString = builder.Configuration["Observability:ApplicationInsights:ConnectionString"];
-    options.InstrumentationKey = appInsightsKey;
+    if (!string.IsNullOrWhiteSpace(appInsightsConnection))
+    {
+        options.ConnectionString = appInsightsConnection;
+    }
 });
 
 // Database & services
