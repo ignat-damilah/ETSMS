@@ -9,11 +9,7 @@
     <ProjectReference Include="../Foundation.Application/Foundation.Application.csproj" />
     <ProjectReference Include="../Foundation.Infrastructure/Foundation.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.ResponseCompression" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.24.0" />
-    <PackageReference Include="AspNetCoreRateLimit" Version="4.0.0" />
-    <PackageReference Include="Prometheus.AspNetCore" Version="8.0.2" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.0.0" />
   </ItemGroup>
 </Project>
