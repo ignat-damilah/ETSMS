@@ -1,4 +1,5 @@
 using Foundation.Application.Interfaces;
+using Foundation.Infrastructure.Data;
 using Foundation.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
