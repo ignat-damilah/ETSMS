@@ -1,5 +1,7 @@
 using Foundation.API.Endpoints;
+using Foundation.Application.DTOs;
 using Foundation.Application.Extensions;
+using Foundation.Application.Services;
 using Foundation.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -121,6 +123,30 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
 {
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
+});
+
+app.MapGet("/skills", [Authorize(Policy = "EmployeePolicy")] ([FromServices] ISkillService service) =>
+    Results.Ok(service.ListPrimarySkillsAsync()));
+
+app.MapGet("/skills/{primarySkillId}/secondaries", [Authorize(Policy = "LeadershipPolicy")] ([FromServices] ISkillService service, Guid primarySkillId) =>
+    Results.Ok(service.GetSecondarySkillsAsync(primarySkillId)));
+
+app.MapPost("/skills/primary", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, [FromBody] CreatePrimarySkillRequest request) =>
+{
+    var skill = await service.CreatePrimarySkillAsync(request);
+    return Results.Created($"/skills/{skill.Id}", skill);
+});
+
+app.MapPost("/skills/secondary", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, [FromBody] CreateSecondarySkillRequest request) =>
+{
+    var skill = await service.CreateSecondarySkillAsync(request);
+    return Results.Created($"/skills/{skill.Id}", skill);
+});
+
+app.MapPatch("/skills/{id}/deactivate", [Authorize(Policy = "AdminPolicy")] async ([FromServices] ISkillService service, Guid id) =>
+{
+    var skill = await service.DeactivateSkillAsync(id);
+    return skill is not null ? Results.Ok(skill) : Results.NotFound();
 });
 
 app.Run();
