@@ -30,6 +30,9 @@ builder.Services.AddApplicationInsightsTelemetry(options =>
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
+// OpenAPI / Swagger
+builder.Services.AddSwaggerDocumentation();
+
 // Authentication & Authorization
 var azureAdSettings = builder.Configuration.GetSection("Authentication:AzureAd");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -84,6 +87,9 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Swagger UI
+app.UseSwaggerDocumentation();
+
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
 app.MapGet("/health/ready", ([FromServices] Foundation.Infrastructure.Data.FoundationDbContext context) =>
 {
@@ -122,5 +128,8 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
 });
+
+// Skills endpoints (public — no auth required per FR2–FR8)
+app.MapSkillEndpoints();
 
 app.Run();
