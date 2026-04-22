@@ -1,4 +1,5 @@
 using Foundation.Domain.Entities;
+using Foundation.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Foundation.Infrastructure.Data;
@@ -12,6 +13,8 @@ public sealed class FoundationDbContext : DbContext
 
     public DbSet<Employee> Employees => Set<Employee>();
 
+    public DbSet<Skill> Skills => Set<Skill>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -22,5 +25,7 @@ public sealed class FoundationDbContext : DbContext
             builder.Property(e => e.Email).IsRequired().HasMaxLength(250);
             builder.Property(e => e.Role).HasMaxLength(100);
         });
+
+        modelBuilder.ApplyConfiguration(new SkillConfiguration());
     }
 }
