@@ -1,14 +1,18 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.32706.184
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Domain", "src/Foundation.Domain/Foundation.Domain.csproj", "{7DB7F0B4-2EBD-4E9F-9451-8F66D5F700F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Domain", "src\Foundation.Domain\Foundation.Domain.csproj", "{7DB7F0B4-2EBD-4E9F-9451-8F66D5F700F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Application", "src/Foundation.Application/Foundation.Application.csproj", "{4F2BB4E5-2C6D-42AE-8AAB-7C06E910B1B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Application", "src\Foundation.Application\Foundation.Application.csproj", "{4F2BB4E5-2C6D-42AE-8AAB-7C06E910B1B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Infrastructure", "src/Foundation.Infrastructure/Foundation.Infrastructure.csproj", "{5202BF3C-A00B-4D56-8A29-80F786A5C375}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Infrastructure", "src\Foundation.Infrastructure\Foundation.Infrastructure.csproj", "{5202BF3C-A00B-4D56-8A29-80F786A5C375}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.API", "src/Foundation.API/Foundation.API.csproj", "{B2D20F7B-2DDC-4BB7-B206-1999DE64D967}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.API", "src\Foundation.API\Foundation.API.csproj", "{B2D20F7B-2DDC-4BB7-B206-1999DE64D967}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7F595834-5342-4796-A8F9-168BD918288E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundation.Domain.Tests", "tests\Foundation.Domain.Tests\Foundation.Domain.Tests.csproj", "{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,5 +36,12 @@ Global
 		{B2D20F7B-2DDC-4BB7-B206-1999DE64D967}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2D20F7B-2DDC-4BB7-B206-1999DE64D967}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2D20F7B-2DDC-4BB7-B206-1999DE64D967}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{68C5BBCF-ED25-4409-8A50-5640F6DAE1CB} = {7F595834-5342-4796-A8F9-168BD918288E}
 	EndGlobalSection
 EndGlobal
