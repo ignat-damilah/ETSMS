@@ -9,10 +9,10 @@ using Prometheus;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Foundation.API.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +29,50 @@ builder.Services.AddApplicationInsightsTelemetry(options =>
 // Database & services
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
+
+// OpenAPI / Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Foundation API",
+        Version = "v1",
+        Description =
+            "REST API for the centralised Technology Skill Matrix. " +
+            "Provides full CRUD and hierarchy navigation for the Skill Taxonomy (Epic E-02). " +
+            "\n\n## Skill Hierarchy Rules\n" +
+            "- Skills are organised in a **strict two-level taxonomy**: primary → secondary.\n" +
+            "- **Primary skills** have `parentSkillId = null`.\n" +
+            "- **Secondary skills** set `parentSkillId` to the ID of an existing primary skill.\n" +
+            "- A secondary skill cannot itself be a parent (no tertiary nesting).\n" +
+            "- Cyclic and orphaned references are rejected with `400 Bad Request`.\n" +
+            "\n## Deletion Constraints\n" +
+            "- `DELETE /api/skills/{id}` is a **permanent** (physical) delete.\n" +
+            "- Deletion is **blocked** (`409 Conflict`) when the skill has one or more active " +
+            "(`isActive = true`) secondary children.\n" +
+            "- Inactive secondary children do **not** block deletion."
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Azure AD JWT bearer token."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Authentication & Authorization
 var azureAdSettings = builder.Configuration.GetSection("Authentication:AzureAd");
@@ -84,6 +128,14 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Swagger UI
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Foundation API v1");
+    options.RoutePrefix = "swagger";
+});
+
 app.MapGet("/health/live", () => Results.Ok(new { status = "Healthy" }));
 app.MapGet("/health/ready", ([FromServices] Foundation.Infrastructure.Data.FoundationDbContext context) =>
 {
@@ -122,5 +174,8 @@ app.MapPost("/employees", [Authorize(Policy = "AdminPolicy")] ([FromServices] Fo
     var task = service.GetAsync(employee.Id);
     return Results.Accepted();
 });
+
+// Skill endpoints
+app.MapSkillEndpoints();
 
 app.Run();
