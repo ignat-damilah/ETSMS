@@ -1,5 +1,6 @@
 using Foundation.Domain.Entities;
 using Foundation.Domain.Enums;
+using Xunit;
 
 namespace Foundation.Domain.Tests.Entities;
 
