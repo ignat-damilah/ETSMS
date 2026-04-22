@@ -1,4 +1,5 @@
 using Foundation.Application.Interfaces;
+using Foundation.Infrastructure.Data;
 using Foundation.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,7 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        services.AddScoped<ISkillRepository, SkillRepository>();
 
         return services;
     }
