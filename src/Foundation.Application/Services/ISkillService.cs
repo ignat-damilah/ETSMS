@@ -41,9 +41,10 @@ public interface ISkillService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Permanently deletes a skill.
-    /// Returns (true, null) on success, (false, null) when not found,
-    /// or (false, error) when deletion is blocked by active children.
+    /// Soft-deletes a skill by setting <c>IsActive = false</c>. The record is
+    /// retained in the database. Returns (true, null, false) on success,
+    /// (false, null, true) when the skill does not exist, or (false, error, false)
+    /// when deletion is blocked by active children.
     /// </summary>
     Task<(bool Deleted, string? Error, bool NotFound)> DeleteAsync(
         Guid id,

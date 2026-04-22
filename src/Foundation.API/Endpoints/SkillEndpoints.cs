@@ -39,7 +39,8 @@ public static class SkillEndpoints
              .WithSummary("Get a skill by ID")
              .WithDescription(
                  "Returns the full skill record. Secondary skills include parent metadata " +
-                 "(parentSkillId and parentSkillName).")
+                 "(parentSkillId and parentSkillName). Soft-deleted skills (isActive = false) " +
+                 "are still retrievable by ID.")
              .Produces<SkillDto>(StatusCodes.Status200OK)
              .Produces(StatusCodes.Status404NotFound);
 
@@ -57,11 +58,13 @@ public static class SkillEndpoints
         // DELETE /api/skills/{id}
         group.MapDelete("/{id:guid}", DeleteSkillAsync)
              .WithName("DeleteSkill")
-             .WithSummary("Permanently delete a skill")
+             .WithSummary("Soft-delete a skill")
              .WithDescription(
-                 "Physically removes the skill record. Deletion is blocked (409 Conflict) " +
-                 "when the skill has active (IsActive = true) secondary skills. " +
-                 "Inactive secondary children do not block deletion.")
+                 "Marks the skill as inactive (IsActive = false). The record is retained " +
+                 "in the database and remains accessible via GET /api/skills/{id}. " +
+                 "Soft-deletion is blocked (409 Conflict) when the skill has active " +
+                 "(IsActive = true) secondary skills. " +
+                 "Inactive secondary children do not block soft-deletion.")
              .Produces(StatusCodes.Status204NoContent)
              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
              .Produces<ProblemDetails>(StatusCodes.Status409Conflict);

@@ -100,9 +100,15 @@ public sealed class SkillRepository : ISkillRepository
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Performs a soft delete by setting <see cref="Skill.IsActive"/> to <c>false</c>.
+    /// The record is retained in the database and can be queried by passing
+    /// <c>isActive=false</c> to the list endpoints.
+    /// </remarks>
     public async Task DeleteAsync(Skill skill, CancellationToken cancellationToken = default)
     {
-        _context.Skills.Remove(skill);
+        skill.IsActive = false;
+        _context.Skills.Update(skill);
         await _context.SaveChangesAsync(cancellationToken);
     }
 

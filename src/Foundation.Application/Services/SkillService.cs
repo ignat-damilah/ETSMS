@@ -143,9 +143,14 @@ public sealed class SkillService : ISkillService
     }
 
     // -------------------------------------------------------------------------
-    // Delete
+    // Delete (soft)
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    /// Soft-deletes the skill by setting <c>IsActive = false</c>. The record is
+    /// retained in the database. Deletion is blocked when the skill has active
+    /// secondary children.
+    /// </summary>
     public async Task<(bool Deleted, string? Error, bool NotFound)> DeleteAsync(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -159,8 +164,8 @@ public sealed class SkillService : ISkillService
         if (await _repository.HasActiveChildrenAsync(id, cancellationToken))
         {
             return (false,
-                "Cannot delete this skill because it has active secondary skills. " +
-                "Deactivate or delete all active secondary skills before deleting the parent.",
+                "Cannot deactivate this skill because it has active secondary skills. " +
+                "Deactivate all active secondary skills before deactivating the parent.",
                 false);
         }
 

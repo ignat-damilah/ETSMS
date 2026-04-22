@@ -48,10 +48,13 @@ builder.Services.AddSwaggerGen(options =>
             "- A secondary skill cannot itself be a parent (no tertiary nesting).\n" +
             "- Cyclic and orphaned references are rejected with `400 Bad Request`.\n" +
             "\n## Deletion Constraints\n" +
-            "- `DELETE /api/skills/{id}` is a **permanent** (physical) delete.\n" +
-            "- Deletion is **blocked** (`409 Conflict`) when the skill has one or more active " +
-            "(`isActive = true`) secondary children.\n" +
-            "- Inactive secondary children do **not** block deletion."
+            "- `DELETE /api/skills/{id}` performs a **soft delete**: the skill record is " +
+            "retained in the database with `isActive` set to `false`.\n" +
+            "- Soft-deletion is **blocked** (`409 Conflict`) when the skill has one or more " +
+            "active (`isActive = true`) secondary children.\n" +
+            "- Inactive secondary children do **not** block soft-deletion.\n" +
+            "- Soft-deleted skills remain retrievable via `GET /api/skills/{id}` and are " +
+            "included in list results when `isActive=false` is passed."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
